@@ -1,7 +1,10 @@
 all: build
 
 build:
-	go build -o ./build/ cmd/main.go
+	go build -o ./build/app cmd/main.go
+
+build-migrate:
+	go build -o ./build/migrate internal/db/migrate.go
 
 fmt:
 	go fmt ./...
