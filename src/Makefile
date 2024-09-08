@@ -1,10 +1,10 @@
 all: build
 
 build:
-	go build -o ./build/app cmd/main.go
+	go build -o ./bin/app cmd/main.go
 
 build-migrate:
-	go build -o ./build/migrate internal/db/migrate.go
+	go build -o ./bin/migrate internal/db/migrate.go
 
 fmt:
 	go fmt ./...
@@ -13,7 +13,7 @@ vet:
 	go vet ./...
 
 clean:
-	rm -rf build
+	rm -rf bin
 
 rebuild: clean build
 

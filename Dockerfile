@@ -6,7 +6,7 @@ RUN apk add make && make build-migrate && make build
 FROM alpine:3.20
 EXPOSE 8080
 WORKDIR /app
-COPY --from=build /tmp/src/build/app /app/avito_service
-COPY --from=build /tmp/src/build/migrate /app/migrate
-COPY --from=build /tmp/src/internal/db/migations /app/migations
+COPY --from=build /tmp/src/bin/app /app/avito_service
+COPY --from=build /tmp/src/bin/migrate /app/migrate
+COPY --from=build /tmp/src/internal/db/migrations /app/migrations
 ENTRYPOINT [ "/bin/sh", "-c", "/app/migrate && /app/avito_service" ]
