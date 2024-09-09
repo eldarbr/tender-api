@@ -8,12 +8,13 @@ import (
 var DB *sql.DB
 
 func InitDB(dsn string) error {
-	DB, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return err
 	}
-	if err := DB.Ping(); err != nil {
+	if err := db.Ping(); err != nil {
 		return err
 	}
+	DB = db
 	return nil
 }

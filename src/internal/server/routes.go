@@ -1,6 +1,7 @@
 package server
 
 import (
+	"avito-back-test/internal/handler"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -10,6 +11,9 @@ func newRouter() *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/api/ping", PingHandler).Methods(http.MethodGet)
+
+	tenderHandler := handler.NewTenderHandler()
+	r.HandleFunc("/api/tenders", tenderHandler.GetTenders).Methods(http.MethodGet)
 
 	// gorilla/mux:
 	// Routes are tested in the order they were added to the router

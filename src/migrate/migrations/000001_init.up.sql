@@ -1,28 +1,28 @@
 BEGIN;
 
 CREATE TYPE tender_status AS ENUM (
-    'CREATED',
-    'PUBLISHED',
-    'CLOSED'
+    'Created',
+    'Published',
+    'Closed'
 );
 
 CREATE TYPE tender_service_type AS ENUM (
-    'CONSTRUCTION',
-    'DELIVERY',
-    'MANUFACTURE'
+    'Construction',
+    'Delivery',
+    'Manufacture'
 );
 
 CREATE TYPE bid_status AS ENUM (
-    'CREATED',
-    'PUBLISHED',
-    'CANCELED',
-    'APPROVED',
-    'REJECTED'
+    'Created',
+    'Published',
+    'Canceled',
+    'Approved',
+    'Rejected'
 );
 
 CREATE TYPE bid_author_type AS ENUM (
-    'ORGANIZATION',
-    'USER'
+    'Organization',
+    'User'
 );
 
 CREATE TABLE tender (
@@ -33,8 +33,7 @@ CREATE TABLE tender (
     status tender_status,
     organization_id UUID REFERENCES organization(id) ON DELETE CASCADE,
     version INT DEFAULT 1 CHECK (version > 0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE bid (
@@ -46,8 +45,7 @@ CREATE TABLE bid (
     author_type bid_author_type,
     author_id UUID REFERENCES employee(id) ON DELETE SET NULL,
     version INT DEFAULT 1 CHECK (version > 0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE bid_review (
@@ -55,8 +53,7 @@ CREATE TABLE bid_review (
     bid_id UUID REFERENCES bid(id) ON DELETE CASCADE,
     review_description TEXT,
     reviewed_by UUID REFERENCES employee(id) ON DELETE SET NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMIT;
