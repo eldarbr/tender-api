@@ -15,13 +15,15 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ok"))
 }
 
-func DefaultHandler(w http.ResponseWriter, r *http.Request) {
-	JSONResponse(w, map[string]string{"reason": "Not found"}, 404)
-}
-
 func MethodNotAllowedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Allow", http.MethodGet)
 		JSONResponse(w, map[string]string{"reason": "Method not allowed"}, 405)
+	})
+}
+
+func NotFoundHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		JSONResponse(w, map[string]string{"reason": "Not found"}, 404)
 	})
 }
