@@ -4,7 +4,7 @@ build:
 	go build -o ./bin/app cmd/main.go
 
 build-migrate:
-	go build -o ./bin/migrate internal/db/migrate.go
+	go build -o ./bin/migrate migrate/migrate.go
 
 fmt:
 	go fmt ./...

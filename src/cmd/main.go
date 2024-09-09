@@ -2,6 +2,7 @@ package main
 
 import (
 	"avito-back-test/internal/config"
+	"avito-back-test/internal/db"
 	"avito-back-test/internal/server"
 	"context"
 	"log"
@@ -15,6 +16,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	if err := db.InitDB(config.PostgresConnUrl); err != nil {
+		log.Fatal(err)
+	}
+	defer db.DB.Close()
+
 	server := server.NewServer(config)
 
 	go func() {
