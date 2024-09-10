@@ -39,3 +39,26 @@ func (r *TenderRepository) GetAllTenders() ([]model.Tender, error) {
 	}
 	return tenders, nil
 }
+
+func (r *TenderRepository) InsertNewTender(t *model.Tender) error {
+	query := `
+INSERT INTO tender
+	(name, description, service_type, status, organization_id)
+VALUES
+	($1, $2, $3, $4, $5)
+RETURNING
+	id,
+	name,
+	description,
+	service_type,
+	status,
+	organization_id,
+	version,
+	created_at`
+
+	row := r.db.QueryRow(query, t.Name, t.Description, t.ServiceType,
+		t.Status, t.OrganizationID)
+	err := row.Scan(&t.ID, &t.Name, &t.Description, &t.ServiceType, &t.Status,
+		&t.OrganizationID, &t.Version, &t.CreatedAt)
+	return err
+}
