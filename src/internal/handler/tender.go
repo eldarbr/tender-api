@@ -36,8 +36,7 @@ func (h *TenderHandler) GetTenders(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(tenders); err != nil {
-		log.Println(err)
-		http.Error(w, "Failed to encode tenders to JSON", http.StatusInternalServerError)
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 500)
 		return
 	}
 }
@@ -47,7 +46,6 @@ func (h *TenderHandler) InsertNewTender(w http.ResponseWriter, r *http.Request) 
 		Name            string `json:"name"`
 		Description     string `json:"description"`
 		ServiceType     string `json:"serviceType"`
-		Status          string `json:"status"`
 		OrganizationID  string `json:"organizationId"`
 		CreatorUsername string `json:"creatorUsername"`
 	}
@@ -70,7 +68,6 @@ func (h *TenderHandler) InsertNewTender(w http.ResponseWriter, r *http.Request) 
 		Name:            tenderRequest.Name,
 		Description:     tenderRequest.Description,
 		ServiceType:     tenderRequest.ServiceType,
-		Status:          tenderRequest.Status,
 		OrganizationID:  orgID,
 		CreatorUsername: tenderRequest.CreatorUsername,
 	}
@@ -78,7 +75,7 @@ func (h *TenderHandler) InsertNewTender(w http.ResponseWriter, r *http.Request) 
 	// Pass to the service
 	err = h.srv.InsertNewTender(&newTender)
 	if err == service.ErrNotResponsible {
-		JSONResponse(w, map[string]string{"reason": "the employee is not respnosible for the operation"}, 403)
+		JSONResponse(w, map[string]string{"reason": "the employee is not respnosible for the organization"}, 403)
 		return
 	}
 	if err == repository.ErrNoEmployee {
@@ -86,7 +83,7 @@ func (h *TenderHandler) InsertNewTender(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if err != nil {
-		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 500)
 		return
 	}
 	JSONResponse(w, newTender, 200)

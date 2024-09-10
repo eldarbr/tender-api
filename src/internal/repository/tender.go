@@ -19,7 +19,17 @@ func NewTenderRepository() *TenderRepository {
 
 func (r *TenderRepository) GetAllTenders() ([]model.Tender, error) {
 
-	query := `SELECT id, name, description, service_type, status, organization_id, version, created_at FROM tender`
+	query := `
+SELECT
+	id,
+	name,
+	description,
+	service_type,
+	status,
+	organization_id,
+	version,
+	created_at
+FROM tender`
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -43,9 +53,9 @@ func (r *TenderRepository) GetAllTenders() ([]model.Tender, error) {
 func (r *TenderRepository) InsertNewTender(t *model.Tender) error {
 	query := `
 INSERT INTO tender
-	(name, description, service_type, status, organization_id)
+	(name, description, service_type, organization_id)
 VALUES
-	($1, $2, $3, $4, $5)
+	($1, $2, $3, $4)
 RETURNING
 	id,
 	name,
@@ -56,8 +66,7 @@ RETURNING
 	version,
 	created_at`
 
-	row := r.db.QueryRow(query, t.Name, t.Description, t.ServiceType,
-		t.Status, t.OrganizationID)
+	row := r.db.QueryRow(query, t.Name, t.Description, t.ServiceType, t.OrganizationID)
 	err := row.Scan(&t.ID, &t.Name, &t.Description, &t.ServiceType, &t.Status,
 		&t.OrganizationID, &t.Version, &t.CreatedAt)
 	return err

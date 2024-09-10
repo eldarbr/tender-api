@@ -30,7 +30,7 @@ CREATE TABLE tender (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     service_type tender_service_type,
-    status tender_status,
+    status tender_status DEFAULT 'Created',
     organization_id UUID REFERENCES organization(id) ON DELETE CASCADE,
     version INT DEFAULT 1 CHECK (version > 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -40,7 +40,7 @@ CREATE TABLE bid (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     description TEXT,
-    status bid_status,
+    status bid_status DEFAULT 'Created',
     tender_id UUID REFERENCES tender(id) ON DELETE CASCADE,
     author_type bid_author_type,
     author_id UUID REFERENCES employee(id) ON DELETE SET NULL,
