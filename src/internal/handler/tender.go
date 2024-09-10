@@ -30,6 +30,10 @@ func (h *TenderHandler) GetTenders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to fetch tenders", http.StatusInternalServerError)
 		return
 	}
+	if tenders == nil {
+		JSONResponse(w, []map[string]string{}, 200)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(tenders); err != nil {
 		log.Println(err)
