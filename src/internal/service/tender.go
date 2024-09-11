@@ -4,6 +4,8 @@ import (
 	"avito-back-test/internal/model"
 	"avito-back-test/internal/repository"
 	"errors"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -61,6 +63,36 @@ func (s *TenderService) GetUserTenders(username string, limit, offset int) ([]mo
 		return nil, err
 	}
 	return s.tenderRepo.GetUserTenders(*employeeID, limit, offset)
+}
+
+func (s *TenderService) GetTenderStatus(tenderID uuid.UUID, username *string) (string, error) {
+	currentTender, err := s.tenderRepo.GetTenderByID(tenderID)
+	if err != nil {
+		return "", err
+	}
+	// return immediately if the tender is public
+	if currentTender.Status == "Published" {
+		return currentTender.Status, nil
+	}
+	// otherwise (not public) return responsibility error if no username is provided
+	if username == nil {
+		return "", ErrNotResponsible
+	}
+	// get user id by username
+	employeeId, err := s.employeeRepo.GetEmployeeIDByUsername(*username)
+	if err != nil {
+		return "", err
+	}
+	// Check if the employee is responsible
+	isResponsible, err := s.organizationResponsibleRepo.GetIfEmployeeIsResponsible(employeeId, &currentTender.OrganizationID)
+	if err != nil {
+		return "", err
+	}
+	if !isResponsible {
+		return "", ErrNotResponsible
+	}
+	// at this point, the user is responsible and can see the response
+	return currentTender.Status, nil
 }
 
 func (s *TenderService) UpdateTenderStatus(t *model.Tender, username string) error {

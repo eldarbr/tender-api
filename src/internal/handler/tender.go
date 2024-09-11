@@ -211,3 +211,38 @@ func (h *TenderHandler) UpdateTenderStatus(w http.ResponseWriter, r *http.Reques
 	}
 	JSONResponse(w, tender, 200)
 }
+
+func (h *TenderHandler) GetTenderStatus(w http.ResponseWriter, r *http.Request) {
+	var (
+		err      error
+		tenderID uuid.UUID
+		username *string
+	)
+	r.ParseForm()
+	requestVars := mux.Vars(r)
+	tenderID, err = uuid.Parse(requestVars["tenderId"])
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	if r.Form.Has("username") {
+		username = new(string)
+		*username = r.Form.Get("username")
+	}
+
+	tenderStatus, err := h.srv.GetTenderStatus(tenderID, username)
+
+	if err == service.ErrNoTender {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
+		return
+	}
+	if err == service.ErrNotResponsible {
+		JSONResponse(w, map[string]string{"reason": "not authorized"}, 403)
+		return
+	}
+	if err == service.ErrNoEmployee {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
+		return
+	}
+	JSONResponse(w, tenderStatus, 200)
+}

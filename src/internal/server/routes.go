@@ -16,6 +16,7 @@ func newRouter() *mux.Router {
 	r.HandleFunc("/api/tenders/new", tenderHandler.InsertNewTender).Methods(http.MethodPost)
 	r.HandleFunc("/api/tenders/my", tenderHandler.GetMyTenders).Methods(http.MethodGet)
 	r.HandleFunc("/api/tenders/{tenderId}/status", tenderHandler.UpdateTenderStatus).Methods(http.MethodPut)
+	r.HandleFunc("/api/tenders/{tenderId}/status", tenderHandler.GetTenderStatus).Methods(http.MethodGet)
 	r.HandleFunc("/api/tenders", tenderHandler.GetTenders).Methods(http.MethodGet)
 
 	// gorilla/mux:
