@@ -2,7 +2,6 @@ package repository
 
 import (
 	"avito-back-test/internal/db"
-	// "avito-back-test/internal/model"
 	"database/sql"
 
 	"github.com/google/uuid"

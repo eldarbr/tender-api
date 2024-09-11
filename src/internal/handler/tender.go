@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type TenderHandler struct {
@@ -175,4 +176,40 @@ func (h *TenderHandler) GetMyTenders(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 500)
 		return
 	}
+}
+
+func (h *TenderHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	requestVars := mux.Vars(r)
+
+	r.ParseForm()
+	if !r.Form.Has("status") || !r.Form.Has("username") {
+		JSONResponse(w, map[string]string{"reason": "status, username are required"}, 400)
+		return
+	}
+	var tender model.Tender
+	tender.ID, err = uuid.Parse(requestVars["tenderId"])
+	tender.CreatorUsername = r.Form.Get("username")
+	tender.Status = r.Form.Get("status")
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+
+	err = h.srv.UpdateTenderStatus(&tender)
+
+	if err == repository.ErrNoTender {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
+		return
+	}
+	if err == service.ErrNotResponsible {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 403)
+		return
+	}
+	if err == repository.ErrNoEmployee {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
+		return
+	}
+	JSONResponse(w, tender, 200)
 }

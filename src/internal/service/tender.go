@@ -58,3 +58,24 @@ func (s *TenderService) GetUserTenders(username string, limit, offset int) ([]mo
 	}
 	return s.tenderRepo.GetUserTenders(username, limit, offset)
 }
+
+func (s *TenderService) UpdateTenderStatus(t *model.Tender) error {
+	// Get id by username
+	employeeId, err := s.employeeRepo.GetEmployeeIDByUsername(t.CreatorUsername)
+	if err != nil {
+		return err
+	}
+	currentTender, err := s.tenderRepo.GetTenderByID(t.ID)
+	if err != nil {
+		return err
+	}
+	// Check if the employee is responsible
+	isResponsible, err := s.organizationResponsibleRepo.GetIfEmployeeIsResponsible(employeeId, &currentTender.OrganizationID)
+	if err != nil {
+		return err
+	}
+	if !isResponsible {
+		return ErrNotResponsible
+	}
+	return s.tenderRepo.UpdateTenderStatus(t)
+}

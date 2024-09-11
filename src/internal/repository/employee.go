@@ -37,7 +37,6 @@ WHERE username = $1`
 	var employee model.Employee
 
 	row := r.db.QueryRow(query, username)
-
 	err := row.Scan(&employee.ID, &employee.Username, &employee.FirstName,
 		&employee.LastName, &employee.CreatedAt, &employee.UpdatedAt)
 
