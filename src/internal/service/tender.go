@@ -25,8 +25,12 @@ func NewTenderService() *TenderService {
 	}
 }
 
-func (s *TenderService) GetTenders() ([]model.Tender, error) {
-	return s.tenderRepo.GetAllTenders()
+func (s *TenderService) GetTenders(limit, offset int) ([]model.Tender, error) {
+	return s.tenderRepo.GetAllTenders(limit, offset)
+}
+
+func (s *TenderService) GetTendersOfService(service string, limit, offset int) ([]model.Tender, error) {
+	return s.tenderRepo.GetTendersOfService(service, limit, offset)
 }
 
 func (s *TenderService) InsertNewTender(t *model.Tender) error {
@@ -44,4 +48,13 @@ func (s *TenderService) InsertNewTender(t *model.Tender) error {
 		return ErrNotResponsible
 	}
 	return s.tenderRepo.InsertNewTender(t)
+}
+
+func (s *TenderService) GetUserTenders(username string, limit, offset int) ([]model.Tender, error) {
+	// check username validity
+	_, err := s.employeeRepo.GetEmployeeIDByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+	return s.tenderRepo.GetUserTenders(username, limit, offset)
 }

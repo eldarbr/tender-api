@@ -32,6 +32,7 @@ CREATE TABLE tender (
     service_type tender_service_type,
     status tender_status DEFAULT 'Created',
     organization_id UUID REFERENCES organization(id) ON DELETE CASCADE,
+    creator_username VARCHAR(100) REFERENCES employee(username) ON DELETE CASCADE,
     version INT DEFAULT 1 CHECK (version > 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

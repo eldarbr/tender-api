@@ -5,8 +5,10 @@ import (
 	"avito-back-test/internal/repository"
 	"avito-back-test/internal/service"
 	"encoding/json"
-	"log"
+	"errors"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/google/uuid"
 )
@@ -22,12 +24,59 @@ func NewTenderHandler() *TenderHandler {
 	}
 }
 
-func (h *TenderHandler) GetTenders(w http.ResponseWriter, r *http.Request) {
-	// TODO: proper response in case of an empty list
-	tenders, err := h.srv.GetTenders()
+func parseQueryLimitOffset(query *url.Values) (int, int, error) {
+	var (
+		limit  = 5
+		offset = 0
+		err    error
+	)
+	sLimit, ok := (*query)["limit"]
+	if ok {
+		limit, err = strconv.Atoi(sLimit[0])
+		if err == nil && limit < 1 {
+			return 0, 0, errors.New("limit has to be positive")
+		}
+	}
+
 	if err != nil {
-		log.Println(err)
-		http.Error(w, "Unable to fetch tenders", http.StatusInternalServerError)
+		return 0, 0, err
+	}
+
+	sOffset, ok := (*query)["offset"]
+	if ok {
+		offset, err = strconv.Atoi(sOffset[0])
+		if err == nil && limit < 1 {
+			return 0, 0, errors.New("offset has to be non-negative")
+		}
+	}
+
+	return limit, offset, nil
+}
+
+func (h *TenderHandler) GetTenders(w http.ResponseWriter, r *http.Request) {
+	var (
+		tenders []model.Tender
+		err     error
+
+		// query parameters
+		limit, offset int
+	)
+
+	queryValues := r.URL.Query()
+	limit, offset, err = parseQueryLimitOffset(&queryValues)
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+
+	if serviceType, ok := queryValues["service_type"]; ok {
+		tenders, err = h.srv.GetTendersOfService(serviceType[0], limit, offset)
+	} else {
+		tenders, err = h.srv.GetTenders(limit, offset)
+	}
+
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
 		return
 	}
 	if tenders == nil {
@@ -87,4 +136,43 @@ func (h *TenderHandler) InsertNewTender(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	JSONResponse(w, newTender, 200)
+}
+
+func (h *TenderHandler) GetMyTenders(w http.ResponseWriter, r *http.Request) {
+	var (
+		tenders []model.Tender
+		err     error
+
+		// query parameters
+		limit, offset int
+		username      []string
+	)
+
+	queryValues := r.URL.Query()
+	limit, offset, err = parseQueryLimitOffset(&queryValues)
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	username, ok := queryValues["username"]
+	if !ok {
+		JSONResponse(w, map[string]string{"reason": "username is required"}, 400)
+		return
+	}
+
+	tenders, err = h.srv.GetUserTenders(username[0], limit, offset)
+
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	if tenders == nil {
+		JSONResponse(w, []map[string]string{}, 200)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(tenders); err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 500)
+		return
+	}
 }
