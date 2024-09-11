@@ -15,3 +15,9 @@ type Tender struct {
 	OrganizationID uuid.UUID `json:"-"`
 	CreatedAt      time.Time `json:"created_at"`
 }
+
+type TenderUpdate struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	ServiceType *string `json:"serviceType,omitempty"`
+}

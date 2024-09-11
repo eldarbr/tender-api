@@ -169,7 +169,6 @@ func (h *TenderHandler) GetMyTenders(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, []map[string]string{}, 200)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(tenders); err != nil {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 500)
 		return
@@ -245,4 +244,96 @@ func (h *TenderHandler) GetTenderStatus(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	JSONResponse(w, tenderStatus, 200)
+}
+
+func (h *TenderHandler) UpdateTender(w http.ResponseWriter, r *http.Request) {
+	var (
+		tenderUpdate model.TenderUpdate
+		username     string
+	)
+	if err := json.NewDecoder(r.Body).Decode(&tenderUpdate); err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	vars := mux.Vars(r)
+	tenderID, err := uuid.Parse(vars["tenderId"])
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	r.ParseForm()
+	if r.Form.Has("username") {
+		username = r.Form.Get("username")
+	} else {
+		JSONResponse(w, map[string]string{"reason": "username is required"}, 400)
+		return
+	}
+
+	updatedTender, err := h.srv.PatchTender(tenderID, username, &tenderUpdate)
+	if err == service.ErrNoTender {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
+		return
+	}
+	if err == service.ErrNotResponsible {
+		JSONResponse(w, map[string]string{"reason": "not authorized"}, 403)
+		return
+	}
+	if err == service.ErrNoEmployee {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
+		return
+	}
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	JSONResponse(w, *updatedTender, 200)
+}
+
+func (h *TenderHandler) RollbackTender(w http.ResponseWriter, r *http.Request) {
+	var (
+		username string
+		version  int
+	)
+	vars := mux.Vars(r)
+	tenderID, err := uuid.Parse(vars["tenderId"])
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	r.ParseForm()
+	if r.Form.Has("username") {
+		username = r.Form.Get("username")
+	} else {
+		JSONResponse(w, map[string]string{"reason": "username is required"}, 400)
+		return
+	}
+	if r.Form.Has("version") {
+		version, err = strconv.Atoi(r.Form.Get("version"))
+	} else {
+		JSONResponse(w, map[string]string{"reason": "version is required"}, 400)
+		return
+	}
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+
+	updatedTender, err := h.srv.RollbackTender(tenderID, username, version)
+	if err == service.ErrNoTender {
+		JSONResponse(w, map[string]string{"reason": "no tender with specified version"}, 404)
+		return
+	}
+	if err == service.ErrNotResponsible {
+		JSONResponse(w, map[string]string{"reason": "not authorized"}, 403)
+		return
+	}
+	if err == service.ErrNoEmployee {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
+		return
+	}
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	JSONResponse(w, *updatedTender, 200)
 }

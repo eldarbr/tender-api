@@ -66,7 +66,7 @@ func (s *TenderService) GetUserTenders(username string, limit, offset int) ([]mo
 }
 
 func (s *TenderService) GetTenderStatus(tenderID uuid.UUID, username *string) (string, error) {
-	currentTender, err := s.tenderRepo.GetTenderByID(tenderID)
+	currentTender, err := s.tenderRepo.GetLastTenderByID(tenderID)
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +101,7 @@ func (s *TenderService) UpdateTenderStatus(t *model.Tender, username string) err
 	if err != nil {
 		return err
 	}
-	currentTender, err := s.tenderRepo.GetTenderByID(t.ID)
+	currentTender, err := s.tenderRepo.GetLastTenderByID(t.ID)
 	if err != nil {
 		return err
 	}
@@ -113,5 +113,48 @@ func (s *TenderService) UpdateTenderStatus(t *model.Tender, username string) err
 	if !isResponsible {
 		return ErrNotResponsible
 	}
+	t.Version = currentTender.Version
 	return s.tenderRepo.UpdateTenderStatus(t)
+}
+
+func (s *TenderService) PatchTender(tenderID uuid.UUID, username string, update *model.TenderUpdate) (*model.Tender, error) {
+	// Get id by username
+	employeeId, err := s.employeeRepo.GetEmployeeIDByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+	currentTender, err := s.tenderRepo.GetLastTenderByID(tenderID)
+	if err != nil {
+		return nil, err
+	}
+	// Check if the employee is responsible
+	isResponsible, err := s.organizationResponsibleRepo.GetIfEmployeeIsResponsible(employeeId, &currentTender.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	if !isResponsible {
+		return nil, ErrNotResponsible
+	}
+	return s.tenderRepo.PatchTender(currentTender.ID, update)
+}
+
+func (s *TenderService) RollbackTender(tenderID uuid.UUID, username string, version int) (*model.Tender, error) {
+	// Get id by username
+	employeeId, err := s.employeeRepo.GetEmployeeIDByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+	currentTender, err := s.tenderRepo.GetLastTenderByID(tenderID)
+	if err != nil {
+		return nil, err
+	}
+	// Check if the employee is responsible
+	isResponsible, err := s.organizationResponsibleRepo.GetIfEmployeeIsResponsible(employeeId, &currentTender.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	if !isResponsible {
+		return nil, ErrNotResponsible
+	}
+	return s.tenderRepo.RollbackTender(tenderID, version)
 }

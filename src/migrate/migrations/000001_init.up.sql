@@ -26,14 +26,15 @@ CREATE TYPE bid_author_type AS ENUM (
 );
 
 CREATE TABLE tender (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     description TEXT,
     service_type tender_service_type,
     status tender_status DEFAULT 'Created',
     organization_id UUID REFERENCES organization(id) ON DELETE CASCADE,
     version INT DEFAULT 1 CHECK (version > 0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id, version)
 );
 
 CREATE TABLE bid (

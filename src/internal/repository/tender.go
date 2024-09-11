@@ -162,7 +162,9 @@ func (r *TenderRepository) UpdateTenderStatus(t *model.Tender) error {
 	query := `
 UPDATE tender
 SET status = $1
-WHERE id = $2
+WHERE
+	id = $2
+	AND version = $3
 RETURNING
 	id,
 	name,
@@ -173,7 +175,7 @@ RETURNING
 	version,
 	created_at`
 
-	row := r.db.QueryRow(query, t.Status, t.ID)
+	row := r.db.QueryRow(query, t.Status, t.ID, t.Version)
 	err := row.Scan(&t.ID, &t.Name, &t.Description, &t.ServiceType, &t.Status,
 		&t.OrganizationID, &t.Version, &t.CreatedAt)
 	if err == sql.ErrNoRows {
@@ -185,7 +187,7 @@ RETURNING
 	return nil
 }
 
-func (r *TenderRepository) GetTenderByID(tenderID uuid.UUID) (*model.Tender, error) {
+func (r *TenderRepository) GetLastTenderByID(tenderID uuid.UUID) (*model.Tender, error) {
 	query := `
 SELECT
 	id,
@@ -197,7 +199,9 @@ SELECT
 	version,
 	created_at
 FROM tender
-WHERE id = $1`
+WHERE id = $1
+ORDER BY version DESC
+LIMIT 1`
 
 	var t model.Tender
 
@@ -211,4 +215,152 @@ WHERE id = $1`
 		return nil, err
 	}
 	return &t, nil
+}
+
+func (r *TenderRepository) PatchTender(tenderID uuid.UUID, patch *model.TenderUpdate) (*model.Tender, error) {
+	closeQuery := `
+UPDATE tender
+SET status = 'Closed'
+WHERE
+	id = $1
+	AND version + 1 = (
+		SELECT MAX(version)
+		FROM tender
+		WHERE id = $1
+	)
+`
+	insertQuery := `
+WITH last_version AS (
+	SELECT *
+	FROM tender
+	WHERE id = $1
+	ORDER BY version DESC
+	LIMIT 1
+)
+INSERT INTO tender
+	(id, name, description, service_type, status, organization_id, version)
+SELECT
+	id,
+	COALESCE($2, (SELECT name FROM last_version)),
+	COALESCE($3, (SELECT description FROM last_version)),
+	COALESCE($4, (SELECT service_type FROM last_version)),
+	status,
+	organization_id,
+	version + 1
+FROM last_version
+RETURNING
+	id,
+	name,
+	description,
+	service_type,
+	status,
+	organization_id,
+	version,
+	created_at;
+`
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	var t model.Tender
+
+	row := tx.QueryRow(insertQuery, tenderID, patch.Name, patch.Description, patch.ServiceType)
+	err = row.Scan(&t.ID, &t.Name, &t.Description, &t.ServiceType, &t.Status,
+		&t.OrganizationID, &t.Version, &t.CreatedAt)
+
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	_, err = tx.Exec(closeQuery, tenderID)
+
+	if err != nil {
+		tx.Rollback()
+	} else {
+		tx.Commit()
+	}
+
+	return &t, err
+}
+
+func (r *TenderRepository) RollbackTender(tenderID uuid.UUID, version int) (*model.Tender, error) {
+	insertQuery := `
+WITH max_version AS (
+	SELECT MAX(version) AS value
+	FROM tender
+	WHERE id = $1
+)
+INSERT INTO tender
+	(id, name, description, service_type, status, organization_id, version)
+SELECT
+	id,
+	name,
+	description,
+	service_type,
+	(
+		SELECT status
+		FROM tender
+		WHERE
+			id = $1
+			AND version = max_version.value
+	),
+	organization_id,
+	max_version.value + 1
+FROM tender, max_version
+WHERE
+	id = $1
+	AND version = $2
+RETURNING
+	id,
+	name,
+	description,
+	service_type,
+	status,
+	organization_id,
+	version,
+	created_at;
+`
+	closeQuery := `
+UPDATE tender
+SET status = 'Closed'
+WHERE
+	id = $1
+	AND version + 1 = (
+		SELECT MAX(version)
+		FROM tender
+		WHERE id = $1
+	)
+`
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	var t model.Tender
+
+	row := tx.QueryRow(insertQuery, tenderID, version)
+	err = row.Scan(&t.ID, &t.Name, &t.Description, &t.ServiceType, &t.Status,
+		&t.OrganizationID, &t.Version, &t.CreatedAt)
+
+	if err != nil {
+		tx.Rollback()
+		if err == sql.ErrNoRows {
+			err = ErrNoTender
+		}
+		return nil, err
+	}
+
+	_, err = tx.Exec(closeQuery, tenderID)
+
+	if err != nil {
+		tx.Rollback()
+	} else {
+		tx.Commit()
+	}
+
+	return &t, err
 }
