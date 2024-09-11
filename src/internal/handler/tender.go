@@ -2,7 +2,6 @@ package handler
 
 import (
 	"avito-back-test/internal/model"
-	"avito-back-test/internal/repository"
 	"avito-back-test/internal/service"
 	"encoding/json"
 	"errors"
@@ -127,7 +126,7 @@ func (h *TenderHandler) InsertNewTender(w http.ResponseWriter, r *http.Request) 
 		JSONResponse(w, map[string]string{"reason": "the employee is not respnosible for the organization"}, 403)
 		return
 	}
-	if err == repository.ErrNoEmployee {
+	if err == service.ErrNoEmployee {
 		JSONResponse(w, map[string]string{"reason": "no employee with set username"}, 401)
 		return
 	}
@@ -177,7 +176,7 @@ func (h *TenderHandler) GetMyTenders(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *TenderHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+func (h *TenderHandler) UpdateTenderStatus(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	requestVars := mux.Vars(r)
@@ -198,7 +197,7 @@ func (h *TenderHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	err = h.srv.UpdateTenderStatus(&tender, username)
 
-	if err == repository.ErrNoTender {
+	if err == service.ErrNoTender {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
 		return
 	}
@@ -206,7 +205,7 @@ func (h *TenderHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 403)
 		return
 	}
-	if err == repository.ErrNoEmployee {
+	if err == service.ErrNoEmployee {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
 		return
 	}

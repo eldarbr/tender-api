@@ -6,7 +6,11 @@ import (
 	"errors"
 )
 
-var ErrNotResponsible = errors.New("the employee is not responsible")
+var (
+	ErrNotResponsible = errors.New("the employee is not responsible")
+	ErrNoEmployee     = repository.ErrNoEmployee
+	ErrNoTender       = repository.ErrNoTender
+)
 
 type TenderService struct {
 	tenderRepo                  *repository.TenderRepository
