@@ -26,16 +26,16 @@ func NewTenderService() *TenderService {
 }
 
 func (s *TenderService) GetTenders(limit, offset int) ([]model.Tender, error) {
-	return s.tenderRepo.GetAllTenders(limit, offset)
+	return s.tenderRepo.GetAllPublicTenders(limit, offset)
 }
 
 func (s *TenderService) GetTendersOfService(service string, limit, offset int) ([]model.Tender, error) {
-	return s.tenderRepo.GetTendersOfService(service, limit, offset)
+	return s.tenderRepo.GetPublicTendersOfService(service, limit, offset)
 }
 
-func (s *TenderService) InsertNewTender(t *model.Tender) error {
+func (s *TenderService) InsertNewTender(t *model.Tender, username string) error {
 	// Get id by username
-	employeeId, err := s.employeeRepo.GetEmployeeIDByUsername(t.CreatorUsername)
+	employeeId, err := s.employeeRepo.GetEmployeeIDByUsername(username)
 	if err != nil {
 		return err
 	}
@@ -52,16 +52,16 @@ func (s *TenderService) InsertNewTender(t *model.Tender) error {
 
 func (s *TenderService) GetUserTenders(username string, limit, offset int) ([]model.Tender, error) {
 	// check username validity
-	_, err := s.employeeRepo.GetEmployeeIDByUsername(username)
+	employeeID, err := s.employeeRepo.GetEmployeeIDByUsername(username)
 	if err != nil {
 		return nil, err
 	}
-	return s.tenderRepo.GetUserTenders(username, limit, offset)
+	return s.tenderRepo.GetUserTenders(*employeeID, limit, offset)
 }
 
-func (s *TenderService) UpdateTenderStatus(t *model.Tender) error {
+func (s *TenderService) UpdateTenderStatus(t *model.Tender, username string) error {
 	// Get id by username
-	employeeId, err := s.employeeRepo.GetEmployeeIDByUsername(t.CreatorUsername)
+	employeeId, err := s.employeeRepo.GetEmployeeIDByUsername(username)
 	if err != nil {
 		return err
 	}

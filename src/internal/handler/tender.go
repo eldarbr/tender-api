@@ -115,15 +115,14 @@ func (h *TenderHandler) InsertNewTender(w http.ResponseWriter, r *http.Request) 
 
 	// Build the Tender model
 	newTender := model.Tender{
-		Name:            tenderRequest.Name,
-		Description:     tenderRequest.Description,
-		ServiceType:     tenderRequest.ServiceType,
-		OrganizationID:  orgID,
-		CreatorUsername: tenderRequest.CreatorUsername,
+		Name:           tenderRequest.Name,
+		Description:    tenderRequest.Description,
+		ServiceType:    tenderRequest.ServiceType,
+		OrganizationID: orgID,
 	}
 
 	// Pass to the service
-	err = h.srv.InsertNewTender(&newTender)
+	err = h.srv.InsertNewTender(&newTender, tenderRequest.CreatorUsername)
 	if err == service.ErrNotResponsible {
 		JSONResponse(w, map[string]string{"reason": "the employee is not respnosible for the organization"}, 403)
 		return
@@ -190,14 +189,14 @@ func (h *TenderHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	var tender model.Tender
 	tender.ID, err = uuid.Parse(requestVars["tenderId"])
-	tender.CreatorUsername = r.Form.Get("username")
+	username := r.Form.Get("username")
 	tender.Status = r.Form.Get("status")
 	if err != nil {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
 		return
 	}
 
-	err = h.srv.UpdateTenderStatus(&tender)
+	err = h.srv.UpdateTenderStatus(&tender, username)
 
 	if err == repository.ErrNoTender {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
