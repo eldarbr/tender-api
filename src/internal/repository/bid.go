@@ -249,3 +249,27 @@ RETURNING
 	}
 	return r.GetLastBidByID(bidID)
 }
+
+func (r *BidRepository) RollbackBid(bidID uuid.UUID, version int) (*model.Bid, error) {
+	bidInfoQuery := `
+INSERT INTO bid_information
+	(id, version, name, description)
+SELECT
+	id,
+	(SELECT MAX(version) + 1 FROM bid_information WHERE id = $1),
+	name,
+	description,
+	service_type
+FROM bid_information
+WHERE id = $1 AND version = $2
+RETURNING version
+`
+	q, err := r.db.Query(bidInfoQuery, bidID, version)
+	if err != nil {
+		return nil, err
+	}
+	if !q.Next() {
+		return nil, ErrNoBid
+	}
+	return r.GetLastBidByID(bidID)
+}

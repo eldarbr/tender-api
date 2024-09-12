@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 )
 
 type BidHandler struct {
@@ -270,6 +271,55 @@ func (h *BidHandler) UpdateBid(w http.ResponseWriter, r *http.Request) {
 	updatedBid, err := h.srv.PatchBid(bidID, username, &bidUpdate)
 	if err == service.ErrNoBid {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
+		return
+	}
+	if err == service.ErrNotResponsible {
+		JSONResponse(w, map[string]string{"reason": "not authorized"}, 403)
+		return
+	}
+	if err == service.ErrNoEmployee {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
+		return
+	}
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	JSONResponse(w, *updatedBid, 200)
+}
+
+func (h *BidHandler) RollbackBid(w http.ResponseWriter, r *http.Request) {
+	var (
+		username string
+		version  int
+	)
+	vars := mux.Vars(r)
+	bidID, err := uuid.Parse(vars["bidId"])
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	versionS, ok := vars["version"]
+	if !ok {
+		JSONResponse(w, map[string]string{"reason": "version is required"}, 400)
+		return
+	}
+	version, err = strconv.Atoi(versionS)
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": "invalid version"}, 400)
+		return
+	}
+	r.ParseForm()
+	if r.Form.Has("username") {
+		username = r.Form.Get("username")
+	} else {
+		JSONResponse(w, map[string]string{"reason": "username is required"}, 400)
+		return
+	}
+
+	updatedBid, err := h.srv.RollbackBid(bidID, username, version)
+	if err == service.ErrNoBid {
+		JSONResponse(w, map[string]string{"reason": "no bid with specified version"}, 404)
 		return
 	}
 	if err == service.ErrNotResponsible {

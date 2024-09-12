@@ -138,6 +138,18 @@ func (s *BidService) PatchBid(bidID uuid.UUID, username string, update *model.Bi
 	return s.bidRepo.PatchBid(currentBid.ID, update)
 }
 
+func (s *BidService) RollbackBid(bidID uuid.UUID, username string, version int) (*model.Bid, error) {
+	currentBid, err := s.bidRepo.GetLastBidByID(bidID)
+	if err != nil {
+		return nil, err
+	}
+	err = s.authorizeUserForBid(username, currentBid)
+	if err != nil {
+		return nil, err
+	}
+	return s.bidRepo.RollbackBid(bidID, version)
+}
+
 func (s *BidService) authorizeUserForBid(username string, bid *model.Bid) error {
 	employeeID, err := s.employeeRepo.GetEmployeeIDByUsername(username)
 	if err != nil {
