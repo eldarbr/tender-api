@@ -57,3 +57,40 @@ func (r *EmployeeRepository) GetEmployeeIDByUsername(username string) (*uuid.UUI
 	id := employee.ID
 	return &id, nil
 }
+
+func (r *EmployeeRepository) GetEmployeePresent(employeeID uuid.UUID) (bool, error) {
+	query := `
+SELECT 1
+FROM emoloyee
+WHERE id = $1
+`
+	x, err := r.db.Query(query, employeeID)
+	if err != nil {
+		return false, err
+	}
+	if !x.Next() {
+		return false, nil
+	}
+	return true, nil
+}
+
+func (r *EmployeeRepository) GetEmployeeRespOrganization(employeeID uuid.UUID) (*uuid.UUID, error) {
+	// Task says, one user is responsible for one organization at most
+	query := `
+SELECT organization_id
+FROM organization_responsible
+WHERE user_id = $1
+`
+	var organizationID uuid.UUID
+
+	row := r.db.QueryRow(query, employeeID)
+	err := row.Scan(&organizationID)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrNoEmployee
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &organizationID, nil
+}
