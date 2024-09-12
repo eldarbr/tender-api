@@ -59,8 +59,7 @@ CREATE TABLE bid_information (
 CREATE TABLE bid_review (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     bid_id UUID REFERENCES bid(id) ON DELETE CASCADE,
-    review_description TEXT,
-    reviewed_by UUID REFERENCES employee(id) ON DELETE SET NULL,
+    description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

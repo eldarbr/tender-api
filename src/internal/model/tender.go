@@ -13,7 +13,7 @@ type Tender struct {
 	ServiceType    string    `json:"serviceType"`
 	Version        int       `json:"version"`
 	OrganizationID uuid.UUID `json:"-"`
-	CreatedAt      time.Time `json:"created_at"`
+	CreatedAt      time.Time `json:"createdAt"`
 }
 
 type TenderUpdate struct {

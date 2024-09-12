@@ -14,10 +14,16 @@ type Bid struct {
 	AuthorType  string    `json:"authorType"`
 	AuthorID    uuid.UUID `json:"authorId"`
 	Version     int       `json:"version"`
-	CreatedAt   time.Time `json:"created_at"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 type BidUpdate struct {
 	Name        *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
+}
+
+type BidReview struct {
+	ID          uuid.UUID `json:"id"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"createdAt"`
 }

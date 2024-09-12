@@ -336,3 +336,111 @@ func (h *BidHandler) RollbackBid(w http.ResponseWriter, r *http.Request) {
 	}
 	JSONResponse(w, *updatedBid, 200)
 }
+
+func (h *BidHandler) LeaveFeedback(w http.ResponseWriter, r *http.Request) {
+	var (
+		username string
+		feedback string
+	)
+	vars := mux.Vars(r)
+	bidID, err := uuid.Parse(vars["bidId"])
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	r.ParseForm()
+	if r.Form.Has("username") {
+		username = r.Form.Get("username")
+	} else {
+		JSONResponse(w, map[string]string{"reason": "username is required"}, 400)
+		return
+	}
+	if r.Form.Has("bidFeedback") {
+		feedback = r.Form.Get("bidFeedback")
+	} else {
+		JSONResponse(w, map[string]string{"reason": "feedback is required"}, 400)
+		return
+	}
+
+	bid, err := h.srv.LeaveFeedback(username, bidID, feedback)
+
+	if err == service.ErrNoBid {
+		JSONResponse(w, map[string]string{"reason": "bid not found"}, 404)
+		return
+	}
+	if err == service.ErrNotResponsible {
+		JSONResponse(w, map[string]string{"reason": "not authorized"}, 403)
+		return
+	}
+	if err == service.ErrNoEmployee {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
+		return
+	}
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	JSONResponse(w, *bid, 200)
+}
+
+func (h *BidHandler) GetTenderReviewsOnUser(w http.ResponseWriter, r *http.Request) {
+	var (
+		reviews []model.BidReview
+		err     error
+
+		// query parameters
+		limit, offset     int
+		authorUsername    []string
+		requesterUsername []string
+	)
+
+	queryValues := r.URL.Query()
+	limit, offset, err = parseQueryLimitOffset(&queryValues)
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	authorUsername, ok := queryValues["authorUsername"]
+	if !ok {
+		JSONResponse(w, map[string]string{"reason": "author username is required"}, 400)
+		return
+	}
+	requesterUsername, ok = queryValues["requesterUsername"]
+	if !ok {
+		JSONResponse(w, map[string]string{"reason": "requester username is required"}, 400)
+		return
+	}
+	requestVars := mux.Vars(r)
+	tenderID, err := uuid.Parse(requestVars["tenderId"])
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+
+	reviews, err = h.srv.GetTenderReviewsOnUser(tenderID, authorUsername[0], requesterUsername[0], limit, offset)
+
+	if err == service.ErrNoEmployee {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
+		return
+	}
+	if err == service.ErrNoTender {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
+		return
+	}
+	if err == service.ErrNotResponsible {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 403)
+		return
+	}
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	if reviews == nil {
+		JSONResponse(w, []map[string]string{}, 200)
+		return
+	}
+	if err := json.NewEncoder(w).Encode(reviews); err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 500)
+		return
+	}
+}

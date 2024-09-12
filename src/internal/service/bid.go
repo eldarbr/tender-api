@@ -150,6 +150,30 @@ func (s *BidService) RollbackBid(bidID uuid.UUID, username string, version int) 
 	return s.bidRepo.RollbackBid(bidID, version)
 }
 
+func (s *BidService) LeaveFeedback(username string, bidID uuid.UUID, feedback string) (*model.Bid, error) {
+	userID, err := s.employeeRepo.GetEmployeeIDByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+	currenctBid, err := s.bidRepo.GetLastBidByID(bidID)
+	if err != nil {
+		return nil, err
+	}
+	// authorize tender responsible
+	tender, err := s.tenderRepo.GetLastTenderByID(currenctBid.TenderID)
+	if err != nil {
+		return nil, err
+	}
+	isResponsible, err := s.organizationResponsibleRepo.GetIfEmployeeIsResponsible(userID, &tender.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	if !isResponsible {
+		return nil, ErrNotResponsible
+	}
+	return s.bidRepo.LeaveReview(bidID, feedback)
+}
+
 func (s *BidService) authorizeUserForBid(username string, bid *model.Bid) error {
 	employeeID, err := s.employeeRepo.GetEmployeeIDByUsername(username)
 	if err != nil {
@@ -167,4 +191,30 @@ func (s *BidService) authorizeUserForBid(username string, bid *model.Bid) error 
 		}
 	}
 	return ErrNotResponsible
+}
+
+func (s *BidService) GetTenderReviewsOnUser(tenderID uuid.UUID, authorUsername, requesterUsername string,
+	limit, offset int) ([]model.BidReview, error) {
+
+	requesterID, err := s.employeeRepo.GetEmployeeIDByUsername(requesterUsername)
+	if err != nil {
+		return nil, err
+	}
+	tender, err := s.tenderRepo.GetLastTenderByID(tenderID)
+	if err != nil {
+		return nil, err
+	}
+	isResponsible, err := s.organizationResponsibleRepo.GetIfEmployeeIsResponsible(requesterID, &tender.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	if !isResponsible {
+		return nil, ErrNotResponsible
+	}
+	bidUserID, err := s.employeeRepo.GetEmployeeIDByUsername(authorUsername)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.bidRepo.GetTenderReviewsOnUser(tenderID, *bidUserID, limit, offset)
 }

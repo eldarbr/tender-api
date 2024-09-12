@@ -273,3 +273,56 @@ RETURNING version
 	}
 	return r.GetLastBidByID(bidID)
 }
+
+func (r *BidRepository) LeaveReview(bidID uuid.UUID, review string) (*model.Bid, error) {
+	bidReviewQuery := `
+INSERT INTO bid_review
+	(bid_id, description)
+VALUES ($1, $2)
+`
+	_, err := r.db.Exec(bidReviewQuery, bidID, review)
+	if err != nil {
+		return nil, err
+	}
+	return r.GetLastBidByID(bidID)
+}
+
+func (r *BidRepository) GetTenderReviewsOnUser(tenderID, bidUserID uuid.UUID,
+	limit, offset int) ([]model.BidReview, error) {
+
+	bidReviewQuery := `
+SELECT
+  br.id, br.description, br.created_at
+FROM bid_review br
+  JOIN bid AS b
+    ON (br.bid_id = b.id AND b.tender_id = $1)
+  LEFT JOIN organization_responsible AS orr
+    ON (
+      orr.organization_id = b.author_id
+	  AND b.author_type = 'Organization'
+	)
+WHERE (
+  b.author_type = 'Organization' AND orr.user_id = $2
+  OR b.author_type = 'User' AND b.author_id = $2
+)
+ORDER BY br.created_at DESC
+LIMIT $3
+OFFSET $4
+`
+	rows, err := r.db.Query(bidReviewQuery, tenderID, bidUserID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var bidReviews []model.BidReview
+	for rows.Next() {
+		var bidR model.BidReview
+		err := rows.Scan(&bidR.ID, &bidR.Description, &bidR.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		bidReviews = append(bidReviews, bidR)
+	}
+	return bidReviews, nil
+}

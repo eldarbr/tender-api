@@ -61,7 +61,7 @@ func (r *EmployeeRepository) GetEmployeeIDByUsername(username string) (*uuid.UUI
 func (r *EmployeeRepository) GetEmployeePresent(employeeID uuid.UUID) (bool, error) {
 	query := `
 SELECT 1
-FROM emoloyee
+FROM employee
 WHERE id = $1
 `
 	x, err := r.db.Query(query, employeeID)
