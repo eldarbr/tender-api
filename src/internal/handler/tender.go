@@ -300,21 +300,21 @@ func (h *TenderHandler) RollbackTender(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
 		return
 	}
+	versionS, ok := vars["version"]
+	if !ok {
+		JSONResponse(w, map[string]string{"reason": "version is required"}, 400)
+		return
+	}
+	version, err = strconv.Atoi(versionS)
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": "invalid version"}, 400)
+		return
+	}
 	r.ParseForm()
 	if r.Form.Has("username") {
 		username = r.Form.Get("username")
 	} else {
 		JSONResponse(w, map[string]string{"reason": "username is required"}, 400)
-		return
-	}
-	if r.Form.Has("version") {
-		version, err = strconv.Atoi(r.Form.Get("version"))
-	} else {
-		JSONResponse(w, map[string]string{"reason": "version is required"}, 400)
-		return
-	}
-	if err != nil {
-		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
 		return
 	}
 

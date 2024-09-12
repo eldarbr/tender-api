@@ -15,9 +15,7 @@ CREATE TYPE tender_service_type AS ENUM (
 CREATE TYPE bid_status AS ENUM (
     'Created',
     'Published',
-    'Canceled',
-    'Approved',
-    'Rejected'
+    'Canceled'
 );
 
 CREATE TYPE bid_author_type AS ENUM (
