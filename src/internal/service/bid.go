@@ -114,7 +114,7 @@ func (s *BidService) GetBidStatus(bidID uuid.UUID, username string) (string, err
 	return currentBid.Status, nil
 }
 
-func (s *BidService) UpdateTenderStatus(b *model.Bid, username string) error {
+func (s *BidService) UpdateBidStatus(b *model.Bid, username string) error {
 	currentBid, err := s.bidRepo.GetLastBidByID(b.ID)
 	if err != nil {
 		return err

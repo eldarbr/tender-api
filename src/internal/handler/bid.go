@@ -223,7 +223,7 @@ func (h *BidHandler) UpdateBidStatus(w http.ResponseWriter, r *http.Request) {
 		ID:     bidID,
 		Status: status[0],
 	}
-	err = h.srv.UpdateTenderStatus(&bid, username[0])
+	err = h.srv.UpdateBidStatus(&bid, username[0])
 
 	if err == service.ErrNoEmployee {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
@@ -254,7 +254,7 @@ func (h *BidHandler) UpdateBid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	vars := mux.Vars(r)
-	tenderID, err := uuid.Parse(vars["bidId"])
+	bidID, err := uuid.Parse(vars["bidId"])
 	if err != nil {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
 		return
@@ -267,8 +267,8 @@ func (h *BidHandler) UpdateBid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedTender, err := h.srv.PatchBid(tenderID, username, &bidUpdate)
-	if err == service.ErrNoTender {
+	updatedBid, err := h.srv.PatchBid(bidID, username, &bidUpdate)
+	if err == service.ErrNoBid {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
 		return
 	}
@@ -284,5 +284,5 @@ func (h *BidHandler) UpdateBid(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
 		return
 	}
-	JSONResponse(w, *updatedTender, 200)
+	JSONResponse(w, *updatedBid, 200)
 }

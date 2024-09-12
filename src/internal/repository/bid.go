@@ -25,7 +25,7 @@ func NewBidRepository() *BidRepository {
 }
 
 func (r *BidRepository) InsertNewBid(b *model.Bid) error {
-	tenderQuery := `
+	bidQuery := `
 INSERT INTO bid
 	(tender_id, author_type, author_id)
 VALUES ($1, $2, $3)
@@ -34,7 +34,7 @@ RETURNING
 	status,
 	created_at
 `
-	tenderInfoQuery := `
+	bidInfoQuery := `
 INSERT INTO bid_information
 	(id, name, description)
 VALUES ($1, $2, $3)
@@ -46,7 +46,7 @@ RETURNING
 		return err
 	}
 
-	row := tx.QueryRow(tenderQuery, b.TenderID, b.AuthorType, b.AuthorID)
+	row := tx.QueryRow(bidQuery, b.TenderID, b.AuthorType, b.AuthorID)
 	err = row.Scan(&b.ID, &b.Status, &b.CreatedAt)
 
 	if err != nil {
@@ -54,7 +54,7 @@ RETURNING
 		return err
 	}
 
-	row = tx.QueryRow(tenderInfoQuery, b.ID, b.Name, b.Description)
+	row = tx.QueryRow(bidInfoQuery, b.ID, b.Name, b.Description)
 	err = row.Scan(&b.Version)
 
 	if err != nil {
@@ -184,7 +184,7 @@ RETURNING
 	return err
 }
 
-func (r *BidRepository) GetLastBidByID(tenderID uuid.UUID) (*model.Bid, error) {
+func (r *BidRepository) GetLastBidByID(bidID uuid.UUID) (*model.Bid, error) {
 	query := `
 SELECT
 	b.id,
@@ -205,12 +205,12 @@ LIMIT 1
 `
 	var bid model.Bid
 
-	row := r.db.QueryRow(query, tenderID)
+	row := r.db.QueryRow(query, bidID)
 	err := row.Scan(&bid.ID, &bid.Name, &bid.Description,
 		&bid.TenderID, &bid.Status, &bid.AuthorID,
 		&bid.AuthorType, &bid.Version, &bid.CreatedAt)
 	if err == sql.ErrNoRows {
-		return nil, ErrNoTender
+		return nil, ErrNoBid
 	}
 	if err != nil {
 		return nil, err
@@ -227,7 +227,7 @@ SELECT
 	$2,
 	$3,
 	$4,
-	(SELECT MAX(version) + 1 FROM tender_information WHERE id = $1)
+	(SELECT MAX(version) + 1 FROM bid_information WHERE id = $1)
 RETURNING
 	version;
 `
