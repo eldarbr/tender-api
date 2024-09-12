@@ -159,6 +159,9 @@ func (s *BidService) LeaveFeedback(username string, bidID uuid.UUID, feedback st
 	if err != nil {
 		return nil, err
 	}
+	if currenctBid.Status != "Published" {
+		return nil, ErrNoBid
+	}
 	// authorize tender responsible
 	tender, err := s.tenderRepo.GetLastTenderByID(currenctBid.TenderID)
 	if err != nil {
