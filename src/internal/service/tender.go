@@ -12,6 +12,7 @@ var (
 	ErrNotResponsible = errors.New("the employee is not responsible")
 	ErrNoEmployee     = repository.ErrNoEmployee
 	ErrNoTender       = repository.ErrNoTender
+	ErrTenderClosed   = errors.New("the tender is closed and can't be changed")
 )
 
 type TenderService struct {
@@ -113,6 +114,9 @@ func (s *TenderService) UpdateTenderStatus(t *model.Tender, username string) err
 	if !isResponsible {
 		return ErrNotResponsible
 	}
+	if currentTender.Status == model.TenderClosed {
+		return ErrTenderClosed
+	}
 	t.Version = currentTender.Version
 	return s.tenderRepo.UpdateTenderStatus(t)
 }
@@ -135,6 +139,9 @@ func (s *TenderService) PatchTender(tenderID uuid.UUID, username string, update 
 	if !isResponsible {
 		return nil, ErrNotResponsible
 	}
+	if currentTender.Status == model.TenderClosed {
+		return nil, ErrTenderClosed
+	}
 	return s.tenderRepo.PatchTender(currentTender.ID, update)
 }
 
@@ -155,6 +162,9 @@ func (s *TenderService) RollbackTender(tenderID uuid.UUID, username string, vers
 	}
 	if !isResponsible {
 		return nil, ErrNotResponsible
+	}
+	if currentTender.Status == model.TenderClosed {
+		return nil, ErrTenderClosed
 	}
 	return s.tenderRepo.RollbackTender(tenderID, version)
 }

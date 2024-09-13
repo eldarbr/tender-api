@@ -31,6 +31,7 @@ func newRouter() *mux.Router {
 	r.HandleFunc("/api/bids/{bidId}/rollback/{version}", bidHandler.RollbackBid).Methods(http.MethodPut)
 	r.HandleFunc("/api/bids/{bidId}/feedback", bidHandler.LeaveFeedback).Methods(http.MethodPut)
 	r.HandleFunc("/api/bids/{tenderId}/reviews", bidHandler.GetTenderReviewsOnUser).Methods(http.MethodGet)
+	r.HandleFunc("/api/bids/{bidId}/submit_decision", bidHandler.SubmitDecision).Methods(http.MethodPut)
 
 	// gorilla/mux:
 	// Routes are tested in the order they were added to the router

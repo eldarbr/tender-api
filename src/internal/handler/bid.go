@@ -237,7 +237,7 @@ func (h *BidHandler) UpdateBidStatus(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
 		return
 	}
-	if err == service.ErrNotResponsible {
+	if err == service.ErrNotResponsible || err == service.ErrBidCanceled {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 403)
 		return
 	}
@@ -276,8 +276,8 @@ func (h *BidHandler) UpdateBid(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
 		return
 	}
-	if err == service.ErrNotResponsible {
-		JSONResponse(w, map[string]string{"reason": "not authorized"}, 403)
+	if err == service.ErrNotResponsible || err == service.ErrBidCanceled {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 403)
 		return
 	}
 	if err == service.ErrNoEmployee {
@@ -325,8 +325,8 @@ func (h *BidHandler) RollbackBid(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, map[string]string{"reason": "no bid with specified version"}, 404)
 		return
 	}
-	if err == service.ErrNotResponsible {
-		JSONResponse(w, map[string]string{"reason": "not authorized"}, 403)
+	if err == service.ErrNotResponsible || err == service.ErrBidCanceled {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 403)
 		return
 	}
 	if err == service.ErrNoEmployee {

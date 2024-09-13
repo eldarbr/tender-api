@@ -11,6 +11,7 @@ var (
 	ErrWrongAuthorType = errors.New("author type not supported")
 	ErrNoOrganization  = repository.ErrNoOrganization
 	ErrNoBid           = repository.ErrNoBid
+	ErrBidCanceled     = errors.New("the bid is canceled and can't be changed")
 )
 
 type BidService struct {
@@ -135,6 +136,9 @@ func (s *BidService) PatchBid(bidID uuid.UUID, username string, update *model.Bi
 	if err != nil {
 		return nil, err
 	}
+	if currentBid.Status == model.BidCanceled {
+		return nil, ErrBidCanceled
+	}
 	return s.bidRepo.PatchBid(currentBid.ID, update)
 }
 
@@ -146,6 +150,9 @@ func (s *BidService) RollbackBid(bidID uuid.UUID, username string, version int) 
 	err = authorizeUserForBid(username, currentBid, s.employeeRepo, s.organizationResponsibleRepo)
 	if err != nil {
 		return nil, err
+	}
+	if currentBid.Status == model.BidCanceled {
+		return nil, ErrBidCanceled
 	}
 	return s.bidRepo.RollbackBid(bidID, version)
 }

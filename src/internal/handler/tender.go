@@ -200,7 +200,7 @@ func (h *TenderHandler) UpdateTenderStatus(w http.ResponseWriter, r *http.Reques
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
 		return
 	}
-	if err == service.ErrNotResponsible {
+	if err == service.ErrNotResponsible || err == service.ErrTenderClosed {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 403)
 		return
 	}
@@ -274,8 +274,8 @@ func (h *TenderHandler) UpdateTender(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 404)
 		return
 	}
-	if err == service.ErrNotResponsible {
-		JSONResponse(w, map[string]string{"reason": "not authorized"}, 403)
+	if err == service.ErrNotResponsible || err == service.ErrTenderClosed {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 403)
 		return
 	}
 	if err == service.ErrNoEmployee {
@@ -323,8 +323,8 @@ func (h *TenderHandler) RollbackTender(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, map[string]string{"reason": "no tender with specified version"}, 404)
 		return
 	}
-	if err == service.ErrNotResponsible {
-		JSONResponse(w, map[string]string{"reason": "not authorized"}, 403)
+	if err == service.ErrNotResponsible || err == service.ErrTenderClosed {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 403)
 		return
 	}
 	if err == service.ErrNoEmployee {
