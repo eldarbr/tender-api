@@ -161,6 +161,10 @@ func (h *TenderHandler) GetMyTenders(w http.ResponseWriter, r *http.Request) {
 
 	tenders, err = h.srv.GetUserTenders(username[0], limit, offset)
 
+	if err == service.ErrNoEmployee {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
+		return
+	}
 	if err != nil {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
 		return

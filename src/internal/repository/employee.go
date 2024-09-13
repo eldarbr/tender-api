@@ -5,7 +5,6 @@ import (
 	"avito-back-test/internal/model"
 	"database/sql"
 	"errors"
-
 	"github.com/google/uuid"
 )
 
@@ -68,10 +67,7 @@ WHERE id = $1
 	if err != nil {
 		return false, err
 	}
-	if !x.Next() {
-		return false, nil
-	}
-	return true, nil
+	return x.Next(), nil
 }
 
 func (r *EmployeeRepository) GetEmployeeRespOrganization(employeeID uuid.UUID) (*uuid.UUID, error) {

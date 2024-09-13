@@ -54,7 +54,7 @@ CREATE TABLE bid (
 );
 
 CREATE TABLE bid_information (
-    id UUID REFERENCES bid(id),
+    id UUID REFERENCES bid(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     version INT DEFAULT 1 CHECK (version > 0),

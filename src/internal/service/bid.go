@@ -55,15 +55,22 @@ func (s *BidService) InsertNewBid(b *model.Bid) error {
 			return ErrNoEmployee
 		}
 		// check if the user is responsible
-		if _, err := s.employeeRepo.GetEmployeeRespOrganization(b.AuthorID); err != nil {
+		_, err = s.employeeRepo.GetEmployeeRespOrganization(b.AuthorID)
+		if err == ErrNoEmployee {
+			return ErrNotResponsible
+		}
+		if err != nil {
 			return err
 		}
 	} else {
 		return ErrWrongAuthorType
 	}
-	_, err := s.tenderRepo.GetLastTenderByID(b.TenderID)
+	ten, err := s.tenderRepo.GetLastTenderByID(b.TenderID)
 	if err != nil {
 		return err
+	}
+	if ten.Status != model.TenderPublished {
+		return ErrNoTender
 	}
 
 	return s.bidRepo.InsertNewBid(b)
@@ -96,7 +103,7 @@ func (s *BidService) GetBidsByTender(tenderID uuid.UUID, username string, limit,
 	if !isResponsible {
 		return nil, ErrNotResponsible
 	}
-	return s.bidRepo.GetUserBids(*employeeID, limit, offset)
+	return s.bidRepo.GetPublicBidsByTender(tenderID, limit, offset)
 }
 
 func (s *BidService) GetBidStatus(bidID uuid.UUID, username string) (string, error) {
@@ -123,6 +130,9 @@ func (s *BidService) UpdateBidStatus(b *model.Bid, username string) error {
 	err = authorizeUserForBid(username, currentBid, s.employeeRepo, s.organizationResponsibleRepo)
 	if err != nil {
 		return err
+	}
+	if currentBid.Status == model.BidCanceled {
+		return ErrBidCanceled
 	}
 	return s.bidRepo.UpdateBidStatus(b)
 }

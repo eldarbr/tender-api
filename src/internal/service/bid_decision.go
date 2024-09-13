@@ -74,7 +74,7 @@ func (s *BidDecisionService) SubmitDecision(bidID uuid.UUID, username string, de
 			return err
 		}
 		quorum := min(organizationRespCount, 3)
-		if pro > quorum {
+		if pro >= quorum {
 			err = s.tenderRepo.TxUpdateTenderStatus(tx, currentBid.TenderID, model.TenderClosed)
 		}
 		return err

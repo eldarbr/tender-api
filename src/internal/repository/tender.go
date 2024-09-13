@@ -209,6 +209,7 @@ func (r *TenderRepository) UpdateTenderStatus(t *model.Tender) error {
 	err = r.TxUpdateTenderStatus(tx, t.ID, t.Status)
 	if err != nil && err != ErrNoBid {
 		tx.Rollback()
+		return err
 	} else {
 		tx.Commit()
 	}

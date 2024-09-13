@@ -4,10 +4,11 @@ import (
 	"avito-back-test/internal/model"
 	"avito-back-test/internal/service"
 	"encoding/json"
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type BidHandler struct {
@@ -206,17 +207,14 @@ func (h *BidHandler) GetBidStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BidHandler) UpdateBidStatus(w http.ResponseWriter, r *http.Request) {
-	queryValues := r.URL.Query()
-	username, ok := queryValues["username"]
-	if !ok {
-		JSONResponse(w, map[string]string{"reason": "username is required"}, 400)
+	r.ParseForm()
+	if !r.Form.Has("status") || !r.Form.Has("username") {
+		JSONResponse(w, map[string]string{"reason": "status, username are required"}, 400)
 		return
 	}
-	status, ok := queryValues["username"]
-	if !ok {
-		JSONResponse(w, map[string]string{"reason": "username is required"}, 400)
-		return
-	}
+	username := r.Form.Get("username")
+	status := r.Form.Get("status")
+
 	requestVars := mux.Vars(r)
 	bidID, err := uuid.Parse(requestVars["bidId"])
 	if err != nil {
@@ -225,9 +223,9 @@ func (h *BidHandler) UpdateBidStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	bid := model.Bid{
 		ID:     bidID,
-		Status: status[0],
+		Status: status,
 	}
-	err = h.srv.UpdateBidStatus(&bid, username[0])
+	err = h.srv.UpdateBidStatus(&bid, username)
 
 	if err == service.ErrNoEmployee {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)

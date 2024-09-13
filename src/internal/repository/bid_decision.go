@@ -18,11 +18,6 @@ func NewBidDecisionRepository() *BidDecisionRepository {
 }
 
 func (r *BidDecisionRepository) TxInsertUpdateDecision(tx *sql.Tx, bidID, userID uuid.UUID, decision string) error {
-	probeQuery := `
-SELECT 1
-FROM bid_decision
-WHERE bid_id = $1 AND responsible_id = $2
-`
 	insertQuery := `
 INSERT INTO bid_decision
 	(bid_id, responsible_id, decision)
@@ -32,16 +27,13 @@ VALUES
 	updateQuery := `
 UPDATE bid_decision
 SET decision = $3
-WHERE bid_id = $1 AND repsonsible_id = $2
+WHERE bid_id = $1 AND responsible_id = $2
 `
-	pr, err := tx.Query(probeQuery, bidID, userID)
+	res, err := tx.Exec(updateQuery, bidID, userID, decision)
 	if err != nil {
 		return err
 	}
-	defer pr.Close()
-	if pr.Next() {
-		_, err = tx.Exec(updateQuery, bidID, userID, decision)
-	} else {
+	if aff, _ := res.RowsAffected(); aff == 0 {
 		_, err = tx.Exec(insertQuery, bidID, userID, decision)
 	}
 	return err

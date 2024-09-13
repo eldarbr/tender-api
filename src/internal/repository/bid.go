@@ -115,7 +115,7 @@ OFFSET $3
 	return bids, nil
 }
 
-func (r *BidRepository) GetBidsByTender(tenderID uuid.UUID, limit, offset int) ([]model.Bid, error) {
+func (r *BidRepository) GetPublicBidsByTender(tenderID uuid.UUID, limit, offset int) ([]model.Bid, error) {
 	query := `
 SELECT
 	b.id,
@@ -138,11 +138,12 @@ FROM bid b
 		ON latest_bi.id = bi.id AND bi.version = latest_bi.mv
 WHERE
 	b.tender_id = $1
+	AND b.status = 'Published'
 ORDER BY name
 LIMIT $2
 OFFSET $3
 `
-	rows, err := r.db.Query(query, tenderID)
+	rows, err := r.db.Query(query, tenderID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -170,6 +171,7 @@ func (r *BidRepository) UpdateBidStatus(b *model.Bid) error {
 	err = r.TxSetBidStatus(tx, b.ID, b.Status)
 	if err != nil && err != ErrNoBid {
 		tx.Rollback()
+		return err
 	} else {
 		tx.Commit()
 	}
@@ -238,7 +240,6 @@ SELECT
 	$1,
 	$2,
 	$3,
-	$4,
 	(SELECT MAX(version) + 1 FROM bid_information WHERE id = $1)
 RETURNING
 	version;
@@ -270,8 +271,7 @@ SELECT
 	id,
 	(SELECT MAX(version) + 1 FROM bid_information WHERE id = $1),
 	name,
-	description,
-	service_type
+	description
 FROM bid_information
 WHERE id = $1 AND version = $2
 RETURNING version
