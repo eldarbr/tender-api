@@ -46,11 +46,11 @@ func processConfig(config *Config) error {
 	if err != nil {
 		return err
 	}
-	noSSLUrl, err := disableSSL(postgresConnUrl)
-	if err != nil {
-		return err
-	}
-	config.PostgresConnUrl = noSSLUrl
+	// noSSLUrl, err := disableSSL(postgresConnUrl)
+	// if err != nil {
+	// 	return err
+	// }
+	config.PostgresConnUrl = postgresConnUrl
 
 	logLevel, err := GetEnv("LOG_LEVEL", "info", false)
 	if err != nil {
