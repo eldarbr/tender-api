@@ -1,7 +1,6 @@
 package repository
 
 import (
-	// "avito-back-test/internal/model"
 	"avito-back-test/internal/db"
 	"database/sql"
 	"errors"

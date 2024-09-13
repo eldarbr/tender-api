@@ -101,14 +101,20 @@ func (h *TenderHandler) InsertNewTender(w http.ResponseWriter, r *http.Request) 
 
 	// Parse the JSON request body
 	if err := json.NewDecoder(r.Body).Decode(&tenderRequest); err != nil {
-		JSONResponse(w, map[string]string{"reason": "Invalid request payload"}, 400)
+		JSONResponse(w, map[string]string{"reason": "invalid request payload"}, 400)
+		return
+	}
+	if len(tenderRequest.Name) == 0 || len(tenderRequest.Description) == 0 ||
+		len(tenderRequest.ServiceType) == 0 || len(tenderRequest.OrganizationID) == 0 ||
+		len(tenderRequest.CreatorUsername) == 0 {
+		JSONResponse(w, map[string]string{"reason": "invalid request payload"}, 400)
 		return
 	}
 
 	// Convert OrganizationID to UUID
 	orgID, err := uuid.Parse(tenderRequest.OrganizationID)
 	if err != nil {
-		JSONResponse(w, map[string]string{"reason": "Invalid organizationId format"}, 400)
+		JSONResponse(w, map[string]string{"reason": "invalid organization id format"}, 400)
 		return
 	}
 
@@ -256,7 +262,11 @@ func (h *TenderHandler) UpdateTender(w http.ResponseWriter, r *http.Request) {
 		username     string
 	)
 	if err := json.NewDecoder(r.Body).Decode(&tenderUpdate); err != nil {
-		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		JSONResponse(w, map[string]string{"reason": "invalid request payload"}, 400)
+		return
+	}
+	if tenderUpdate.Description == nil && tenderUpdate.Name == nil && tenderUpdate.ServiceType == nil {
+		JSONResponse(w, map[string]string{"reason": "invalid request payload"}, 400)
 		return
 	}
 	vars := mux.Vars(r)

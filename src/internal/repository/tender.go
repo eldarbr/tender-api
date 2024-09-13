@@ -43,7 +43,7 @@ FROM tender t
 	) latest_ti
 		ON latest_ti.id = ti.id AND ti.version = latest_ti.mv
 WHERE status = 'Published'
-ORDER BY name
+ORDER BY name ASC, version DESC
 LIMIT $1
 OFFSET $2
 `
@@ -90,7 +90,7 @@ FROM tender t
 WHERE
 	status = 'Published'
 	AND service_type = $1
-ORDER BY name
+ORDER BY name ASC, version DESC
 LIMIT $2
 OFFSET $3
 `
@@ -177,7 +177,7 @@ WHERE organization_id IN (
 	FROM organization_responsible
 	WHERE user_id = $1
 )
-ORDER BY name
+ORDER BY name ASC, version DESC
 LIMIT $2
 OFFSET $3
 `

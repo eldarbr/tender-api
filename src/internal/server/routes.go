@@ -2,6 +2,7 @@ package server
 
 import (
 	"avito-back-test/internal/handler"
+	"avito-back-test/internal/middleware"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -9,6 +10,7 @@ import (
 
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
+	r.Use(middleware.LoggingMiddleware)
 
 	r.HandleFunc("/api/ping", handler.PingHandler).Methods(http.MethodGet)
 

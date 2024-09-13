@@ -39,6 +39,12 @@ func (h *BidHandler) InsertNewBid(w http.ResponseWriter, r *http.Request) {
 		JSONResponse(w, map[string]string{"reason": "Invalid request payload"}, 400)
 		return
 	}
+	if len(bidRequest.Name) == 0 || len(bidRequest.Description) == 0 ||
+		len(bidRequest.TenderID) == 0 || len(bidRequest.AuthorType) == 0 ||
+		len(bidRequest.AuthorID) == 0 {
+		JSONResponse(w, map[string]string{"reason": "invalid request payload"}, 400)
+		return
+	}
 
 	// Convert TenderID to UUID
 	tendID, err1 := uuid.Parse(bidRequest.TenderID)
@@ -253,6 +259,10 @@ func (h *BidHandler) UpdateBid(w http.ResponseWriter, r *http.Request) {
 	)
 	if err := json.NewDecoder(r.Body).Decode(&bidUpdate); err != nil {
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	if bidUpdate.Description == nil && bidUpdate.Name == nil {
+		JSONResponse(w, map[string]string{"reason": "invalid request payload"}, 400)
 		return
 	}
 	vars := mux.Vars(r)

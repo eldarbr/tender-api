@@ -91,7 +91,7 @@ WHERE
 	OR
 	author_type = 'User'
 	AND author_id = $1
-ORDER BY name
+ORDER BY name ASC, version DESC
 LIMIT $2
 OFFSET $3
 `
@@ -139,7 +139,7 @@ FROM bid b
 WHERE
 	b.tender_id = $1
 	AND b.status = 'Published'
-ORDER BY name
+ORDER BY name ASC, version DESC
 LIMIT $2
 OFFSET $3
 `
