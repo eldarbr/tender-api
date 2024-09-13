@@ -32,7 +32,7 @@ CREATE TABLE tender (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     status tender_status DEFAULT 'Created',
     organization_id UUID REFERENCES organization(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE tender_information (
@@ -50,7 +50,7 @@ CREATE TABLE bid (
     tender_id UUID REFERENCES tender(id) ON DELETE CASCADE,
     author_type bid_author_type,
     author_id UUID,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE bid_information (
@@ -65,7 +65,7 @@ CREATE TABLE bid_review (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     bid_id UUID REFERENCES bid(id) ON DELETE CASCADE,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE bid_decision (
