@@ -37,7 +37,7 @@ func NewBidService() *BidService {
 }
 
 func (s *BidService) InsertNewBid(b *model.Bid) error {
-	if b.AuthorType == "Organization" {
+	if b.AuthorType == model.AuthorTypeOrganization {
 		idIsPresent, err := s.organizationRepo.GetOrganizationPresent(b.AuthorID)
 		if err != nil {
 			return err
@@ -45,7 +45,7 @@ func (s *BidService) InsertNewBid(b *model.Bid) error {
 		if !idIsPresent {
 			return ErrNoOrganization
 		}
-	} else if b.AuthorType == "User" {
+	} else if b.AuthorType == model.AuthorTypeUser {
 		idIsPresent, err := s.employeeRepo.GetEmployeePresent(b.AuthorID)
 		if err != nil {
 			return err
@@ -104,10 +104,10 @@ func (s *BidService) GetBidStatus(bidID uuid.UUID, username string) (string, err
 		return "", err
 	}
 	// return immediately if the bid is public
-	if currentBid.Status == "Published" {
+	if currentBid.Status == model.BidPublished {
 		return currentBid.Status, nil
 	}
-	err = s.authorizeUserForBid(username, currentBid)
+	err = authorizeUserForBid(username, currentBid, s.employeeRepo, s.organizationResponsibleRepo)
 	if err != nil {
 		return "", err
 	}
@@ -119,7 +119,7 @@ func (s *BidService) UpdateBidStatus(b *model.Bid, username string) error {
 	if err != nil {
 		return err
 	}
-	err = s.authorizeUserForBid(username, currentBid)
+	err = authorizeUserForBid(username, currentBid, s.employeeRepo, s.organizationResponsibleRepo)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (s *BidService) PatchBid(bidID uuid.UUID, username string, update *model.Bi
 	if err != nil {
 		return nil, err
 	}
-	err = s.authorizeUserForBid(username, currentBid)
+	err = authorizeUserForBid(username, currentBid, s.employeeRepo, s.organizationResponsibleRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (s *BidService) RollbackBid(bidID uuid.UUID, username string, version int) 
 	if err != nil {
 		return nil, err
 	}
-	err = s.authorizeUserForBid(username, currentBid)
+	err = authorizeUserForBid(username, currentBid, s.employeeRepo, s.organizationResponsibleRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -155,37 +155,24 @@ func (s *BidService) LeaveFeedback(username string, bidID uuid.UUID, feedback st
 	if err != nil {
 		return nil, err
 	}
-	currenctBid, err := s.bidRepo.GetLastBidByID(bidID)
+	err = authorizeTenderResponsibleForBid(*userID, bidID, s.tenderRepo, s.bidRepo, s.organizationResponsibleRepo)
 	if err != nil {
 		return nil, err
-	}
-	if currenctBid.Status != "Published" {
-		return nil, ErrNoBid
-	}
-	// authorize tender responsible
-	tender, err := s.tenderRepo.GetLastTenderByID(currenctBid.TenderID)
-	if err != nil {
-		return nil, err
-	}
-	isResponsible, err := s.organizationResponsibleRepo.GetIfEmployeeIsResponsible(userID, &tender.OrganizationID)
-	if err != nil {
-		return nil, err
-	}
-	if !isResponsible {
-		return nil, ErrNotResponsible
 	}
 	return s.bidRepo.LeaveReview(bidID, feedback)
 }
 
-func (s *BidService) authorizeUserForBid(username string, bid *model.Bid) error {
-	employeeID, err := s.employeeRepo.GetEmployeeIDByUsername(username)
+func authorizeUserForBid(username string, bid *model.Bid,
+	employeeRepo *repository.EmployeeRepository,
+	organizationResponsibleRepo *repository.OrganizationResponsibleRepository) error {
+	employeeID, err := employeeRepo.GetEmployeeIDByUsername(username)
 	if err != nil {
 		return err
 	}
-	if bid.AuthorType == "User" && bid.AuthorID == *employeeID {
+	if bid.AuthorType == model.AuthorTypeUser && bid.AuthorID == *employeeID {
 		return nil
-	} else if bid.AuthorType == "Organization" {
-		isResponsible, err := s.organizationResponsibleRepo.GetIfEmployeeIsResponsible(employeeID, &bid.AuthorID)
+	} else if bid.AuthorType == model.AuthorTypeOrganization {
+		isResponsible, err := organizationResponsibleRepo.GetIfEmployeeIsResponsible(employeeID, &bid.AuthorID)
 		if err != nil {
 			return err
 		}
@@ -194,6 +181,31 @@ func (s *BidService) authorizeUserForBid(username string, bid *model.Bid) error 
 		}
 	}
 	return ErrNotResponsible
+}
+
+func authorizeTenderResponsibleForBid(userID, bidID uuid.UUID,
+	tenderRepo *repository.TenderRepository, bidRepo *repository.BidRepository,
+	organizationResponsibleRepo *repository.OrganizationResponsibleRepository) error {
+	currenctBid, err := bidRepo.GetLastBidByID(bidID)
+	if err != nil {
+		return err
+	}
+	if currenctBid.Status != model.BidPublished {
+		return ErrNoBid
+	}
+	// authorize tender responsible
+	tender, err := tenderRepo.GetLastTenderByID(currenctBid.TenderID)
+	if err != nil {
+		return err
+	}
+	isResponsible, err := organizationResponsibleRepo.GetIfEmployeeIsResponsible(&userID, &tender.OrganizationID)
+	if err != nil {
+		return err
+	}
+	if !isResponsible {
+		return ErrNotResponsible
+	}
+	return nil
 }
 
 func (s *BidService) GetTenderReviewsOnUser(tenderID uuid.UUID, authorUsername, requesterUsername string,

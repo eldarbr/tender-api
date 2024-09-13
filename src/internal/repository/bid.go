@@ -163,24 +163,36 @@ OFFSET $3
 }
 
 func (r *BidRepository) UpdateBidStatus(b *model.Bid) error {
-	query := `
-UPDATE bid
-SET status = $1
-WHERE
-	id = $2
-RETURNING
-	id
-`
-	row := r.db.QueryRow(query, b.Status, b.ID)
-	err := row.Scan(&b.ID)
-	if err == sql.ErrNoRows {
-		return ErrNoBid
-	}
+	tx, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
+	err = r.TxSetBidStatus(tx, b.ID, b.Status)
+	if err != nil && err != ErrNoBid {
+		tx.Rollback()
+	} else {
+		tx.Commit()
+	}
 	tmp, err := r.GetLastBidByID(b.ID)
 	*b = *tmp
+	return err
+}
+
+func (r *BidRepository) TxSetBidStatus(tx *sql.Tx, bidID uuid.UUID, status string) error {
+	query := `
+UPDATE bid
+SET status = $2
+WHERE
+	id = $1
+`
+	res, err := tx.Exec(query, bidID, status)
+	if err != nil {
+		return err
+	}
+	var aff int64
+	if aff, err = res.RowsAffected(); aff == 0 {
+		return ErrNoBid
+	}
 	return err
 }
 

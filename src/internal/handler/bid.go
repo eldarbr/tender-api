@@ -11,13 +11,16 @@ import (
 )
 
 type BidHandler struct {
-	srv *service.BidService
+	srv             *service.BidService
+	decisionService *service.BidDecisionService
 }
 
 func NewBidHandler() *BidHandler {
 	srv := service.NewBidService()
+	decisionService := service.NewBidDecisionService()
 	return &BidHandler{
-		srv: srv,
+		srv:             srv,
+		decisionService: decisionService,
 	}
 }
 
@@ -443,4 +446,50 @@ func (h *BidHandler) GetTenderReviewsOnUser(w http.ResponseWriter, r *http.Reque
 		JSONResponse(w, map[string]string{"reason": err.Error()}, 500)
 		return
 	}
+}
+
+func (h *BidHandler) SubmitDecision(w http.ResponseWriter, r *http.Request) {
+	var (
+		username string
+		decision string
+	)
+	vars := mux.Vars(r)
+	bidID, err := uuid.Parse(vars["bidId"])
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+	r.ParseForm()
+	if r.Form.Has("username") {
+		username = r.Form.Get("username")
+	} else {
+		JSONResponse(w, map[string]string{"reason": "username is required"}, 400)
+		return
+	}
+	if r.Form.Has("decision") {
+		decision = r.Form.Get("decision")
+	} else {
+		JSONResponse(w, map[string]string{"reason": "decision is required"}, 400)
+		return
+	}
+
+	bid, err := h.decisionService.SubmitDecision(bidID, username, decision)
+	if err == service.ErrNoBid {
+		JSONResponse(w, map[string]string{"reason": "bid not found"}, 404)
+		return
+	}
+	if err == service.ErrNotResponsible {
+		JSONResponse(w, map[string]string{"reason": "not authorized"}, 403)
+		return
+	}
+	if err == service.ErrNoEmployee {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 401)
+		return
+	}
+	if err != nil {
+		JSONResponse(w, map[string]string{"reason": err.Error()}, 400)
+		return
+	}
+
+	JSONResponse(w, *bid, 200)
 }

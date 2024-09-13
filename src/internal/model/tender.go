@@ -21,3 +21,11 @@ type TenderUpdate struct {
 	Description *string `json:"description,omitempty"`
 	ServiceType *string `json:"serviceType,omitempty"`
 }
+
+type TenderStatus = string
+
+const (
+	TenderCreated   TenderStatus = "Created"
+	TenderPublished TenderStatus = "Published"
+	TenderClosed    TenderStatus = "Closed"
+)

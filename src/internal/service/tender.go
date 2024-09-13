@@ -71,7 +71,7 @@ func (s *TenderService) GetTenderStatus(tenderID uuid.UUID, username *string) (s
 		return "", err
 	}
 	// return immediately if the tender is public
-	if currentTender.Status == "Published" {
+	if currentTender.Status == model.TenderPublished {
 		return currentTender.Status, nil
 	}
 	// otherwise (not public) return responsibility error if no username is provided

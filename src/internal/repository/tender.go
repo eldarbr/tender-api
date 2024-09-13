@@ -202,24 +202,36 @@ OFFSET $3
 }
 
 func (r *TenderRepository) UpdateTenderStatus(t *model.Tender) error {
-	query := `
-UPDATE tender
-SET status = $1
-WHERE
-	id = $2
-RETURNING
-	id
-`
-	row := r.db.QueryRow(query, t.Status, t.ID)
-	err := row.Scan(&t.ID)
-	if err == sql.ErrNoRows {
-		return ErrNoTender
-	}
+	tx, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
+	err = r.TxUpdateTenderStatus(tx, t.ID, t.Status)
+	if err != nil && err != ErrNoBid {
+		tx.Rollback()
+	} else {
+		tx.Commit()
+	}
 	tmp, err := r.GetLastTenderByID(t.ID)
 	*t = *tmp
+	return err
+}
+
+func (r *TenderRepository) TxUpdateTenderStatus(tx *sql.Tx, tenderID uuid.UUID, status string) error {
+	query := `
+UPDATE tender
+SET status = $2
+WHERE
+	id = $1
+`
+	res, err := tx.Exec(query, tenderID, status)
+	if err != nil {
+		return err
+	}
+	var aff int64
+	if aff, err = res.RowsAffected(); aff == 0 {
+		return ErrNoTender
+	}
 	return err
 }
 

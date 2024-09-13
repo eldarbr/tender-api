@@ -23,6 +23,11 @@ CREATE TYPE bid_author_type AS ENUM (
     'User'
 );
 
+CREATE TYPE bid_decision_type AS ENUM (
+    'Approved',
+    'Rejected'
+);
+
 CREATE TABLE tender (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     status tender_status DEFAULT 'Created',
@@ -61,6 +66,13 @@ CREATE TABLE bid_review (
     bid_id UUID REFERENCES bid(id) ON DELETE CASCADE,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE bid_decision (
+    bid_id UUID REFERENCES bid(id) ON DELETE CASCADE,
+    responsible_id UUID REFERENCES employee(id) ON DELETE CASCADE,
+    decision bid_decision_type NOT NULL,
+    PRIMARY KEY (bid_id, responsible_id)
 );
 
 COMMIT;

@@ -27,3 +27,25 @@ type BidReview struct {
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"createdAt"`
 }
+
+type BidStatus = string
+
+const (
+	BidCreated   BidStatus = "Created"
+	BidPublished BidStatus = "Published"
+	BidCanceled  BidStatus = "Canceled"
+)
+
+type AuthorType = string
+
+const (
+	AuthorTypeUser         AuthorType = "User"
+	AuthorTypeOrganization AuthorType = "Organization"
+)
+
+type BidDecisionType = string
+
+const (
+	BidDecisionApproved BidDecisionType = "Approved"
+	BidDecisionRejected BidDecisionType = "Rejected"
+)
