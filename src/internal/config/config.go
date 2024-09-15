@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 )
 
@@ -10,19 +9,6 @@ type Config struct {
 	ServerAddress   string
 	PostgresConnUrl string
 	LogLevel        string
-}
-
-func disableSSL(connUrl string) (string, error) {
-	u, err := url.Parse(connUrl)
-	if err != nil {
-		return "", err
-	}
-
-	q := u.Query()
-	q.Set("sslmode", "disable")
-	u.RawQuery = q.Encode()
-
-	return u.String(), nil
 }
 
 func GetEnv(key, defaultValue string, required bool) (string, error) {
@@ -46,10 +32,6 @@ func processConfig(config *Config) error {
 	if err != nil {
 		return err
 	}
-	// noSSLUrl, err := disableSSL(postgresConnUrl)
-	// if err != nil {
-	// 	return err
-	// }
 	config.PostgresConnUrl = postgresConnUrl
 
 	logLevel, err := GetEnv("LOG_LEVEL", "info", false)
